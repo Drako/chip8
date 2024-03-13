@@ -68,6 +68,49 @@ namespace chip8 {
 
     constexpr std::strong_ordering operator<=>(Address const& rhs) const noexcept = default;
 
+    constexpr Address operator+(int const offset) const noexcept
+    {
+      return Address{static_cast<std::uint16_t>(value_+offset), Address::Truncate{}};
+    }
+
+    /**
+     * Overload of prefix increment operator.
+     */
+    constexpr Address& operator++() noexcept
+    {
+      value_ = (value_+1) & VALUE_MASK;
+      return *this;
+    }
+
+    /**
+     * Overload of prefix decrement operator.
+     */
+    constexpr Address& operator--() noexcept
+    {
+      value_ = (value_-1) & VALUE_MASK;
+      return *this;
+    }
+
+    /**
+     * Overload of postfix increment operator.
+     */
+    constexpr Address operator++(int)& noexcept // NOLINT(*-dcl21-cpp)
+    {
+      Address result{*this};
+      ++(*this);
+      return result;
+    }
+
+    /**
+     * Overload of postfix decrement operator.
+     */
+    constexpr Address operator--(int)& noexcept // NOLINT(*-dcl21-cpp)
+    {
+      Address result{*this};
+      --(*this);
+      return result;
+    }
+
     /**
      * Explicit conversion operator for accessing the raw value.
      * @return The internal raw value.

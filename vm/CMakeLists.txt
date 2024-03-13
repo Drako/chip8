@@ -2,6 +2,8 @@ add_library(vm STATIC
     address.hxx
     call_stack.hxx call_stack.cxx
     memory.hxx memory.cxx
+    processor.hxx processor.cxx
+    screen.hxx
 )
 target_include_directories(vm INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
 
