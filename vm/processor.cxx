@@ -109,10 +109,10 @@ namespace chip8 {
         }
 
         if (++x==Screen::WIDTH) {
-          x = start_x;
           break;
         }
       }
+      x = start_x;
       if (++y==Screen::HEIGHT)
         break;
     }

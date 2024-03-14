@@ -27,8 +27,8 @@ namespace chip8 {
     Screen& screen_;
 
     // registers
-    Address pc_{0x200F};
-    Address i_{};
+    Address pc_{0x200};
+    Address i_{0x0};
     std::array<std::uint8_t, 16u> v_{};
 
     bool native_instruction(std::uint16_t param);
