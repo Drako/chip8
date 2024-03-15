@@ -10,6 +10,39 @@
 #include <thread>
 #include <vector>
 
+class SdlLogger final : public chip8::Logger {
+
+  void debug(char const* message, std::source_location const where) override
+  {
+    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "%s:%d:%d: %s",
+        where.file_name(),
+        static_cast<int>(where.line()),
+        static_cast<int>(where.column()),
+        message
+    );
+  }
+
+  void warn(char const* message, std::source_location const where) override
+  {
+    SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s:%d:%d: %s",
+        where.file_name(),
+        static_cast<int>(where.line()),
+        static_cast<int>(where.column()),
+        message
+    );
+  }
+
+  void error(char const* message, std::source_location const where) override
+  {
+    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s:%d:%d: %s",
+        where.file_name(),
+        static_cast<int>(where.line()),
+        static_cast<int>(where.column()),
+        message
+    );
+  }
+};
+
 class SdlScreen final : public chip8::Screen {
 public:
   void clear() override
@@ -74,15 +107,18 @@ int main(int argc, char** argv)
   std::vector<std::uint8_t> content(size);
   rom.read(reinterpret_cast<char*>(content.data()), size);
 
+  // SDL_LogSetPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG);
+
   SDL_Init(SDL_INIT_EVERYTHING);
   SDL_Window* window = SDL_CreateWindow("CHIP-8", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 320, 0u);
   SDL_Renderer* renderer = SDL_CreateRenderer(window, 0, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
   SdlScreen screen;
+  SdlLogger logger;
   chip8::CallStack call_stack;
   chip8::Memory memory;
   memory.load(chip8::Address{0x200}, content);
-  chip8::Processor processor{call_stack, memory, screen};
+  chip8::Processor processor{call_stack, memory, screen, logger};
 
   std::atomic<bool> run = true;
 
@@ -110,7 +146,6 @@ int main(int argc, char** argv)
       if (evt.type==SDL_QUIT)
         run = false;
     }
-    processor.step();
 
     screen.draw_to(renderer);
   }

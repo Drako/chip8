@@ -6,13 +6,14 @@
 #include <cstdint>
 
 #include "call_stack.hxx"
+#include "logger.hxx"
 #include "memory.hxx"
 #include "screen.hxx"
 
 namespace chip8 {
   class Processor final {
   public:
-    Processor(CallStack& call_stack, Memory& memory, Screen& screen) noexcept;
+    Processor(CallStack& call_stack, Memory& memory, Screen& screen, Logger& logger) noexcept;
 
     Processor(Processor const&) = delete;
 
@@ -25,6 +26,7 @@ namespace chip8 {
     CallStack& call_stack_;
     Memory& memory_;
     Screen& screen_;
+    Logger& logger_;
 
     // registers
     Address pc_{0x200};

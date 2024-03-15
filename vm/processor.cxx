@@ -1,8 +1,11 @@
 #include "processor.hxx"
 
+#include <iomanip>
+#include <sstream>
+
 namespace chip8 {
-  Processor::Processor(CallStack& call_stack, Memory& memory, Screen& screen) noexcept
-      :call_stack_{call_stack}, memory_{memory}, screen_{screen}
+  Processor::Processor(CallStack& call_stack, Memory& memory, Screen& screen, Logger& logger) noexcept
+      :call_stack_{call_stack}, memory_{memory}, screen_{screen}, logger_{logger}
   {
   }
 
@@ -47,49 +50,95 @@ namespace chip8 {
   bool Processor::native_instruction(std::uint16_t const param)
   {
     switch (param) {
-    default:
+    default: {
+      std::ostringstream msg;
+      msg << "Unsupported native instruction 0x"
+          << std::setfill('0') << std::setw(3) << std::hex
+          << (param & Address::VALUE_MASK)
+          << " at 0x"
+          << std::setfill('0') << std::setw(3) << std::hex
+          << static_cast<std::uint16_t>(pc_);
+      logger_.error(msg.str().c_str());
+    }
       return false;
     case 0x0E0:
+      logger_.debug("Instruction: Clear screen");
       screen_.clear();
       return true;
     case 0x0EE:
+      logger_.debug("Instruction: Return");
       if (auto const next_pc = call_stack_.pop(); next_pc.has_value()) {
+        std::ostringstream msg;
+        msg << "Returning to 0x";
+        msg << std::setfill('0') << std::setw(3) << std::hex
+            << static_cast<std::uint16_t>(*next_pc);
+        logger_.debug(msg.str().c_str());
         pc_ = *next_pc;
         return true;
       }
-      else
+      else {
+        logger_.error("No return address on stack");
         return false;
+      }
     }
   }
 
   void Processor::jump(std::uint16_t const param)
   {
+    logger_.debug("Instruction: Jump");
+    std::ostringstream msg;
+    msg << "Jumping to 0x";
+    msg << std::setfill('0') << std::setw(3) << std::hex << (param & Address::VALUE_MASK);
+    logger_.debug(msg.str().c_str());
     pc_ = Address{param, Address::Truncate{}};
   }
 
   void Processor::call(std::uint16_t param)
   {
+    logger_.debug("Instruction: Call");
+    std::ostringstream msg;
+    msg << "Jumping to 0x";
+    msg << std::setfill('0') << std::setw(3) << std::hex << (param & Address::VALUE_MASK);
+    logger_.debug(msg.str().c_str());
     call_stack_.push(pc_);
     pc_ = Address{param, Address::Truncate{}};
   }
 
   void Processor::set_register(std::uint8_t const index, std::uint8_t const value)
   {
+    logger_.debug("Instruction: Set register");
+    std::ostringstream msg;
+    msg << "V";
+    msg << std::hex << static_cast<int>(index);
+    msg << " = " << static_cast<int>(value);
+    logger_.debug(msg.str().c_str());
     v_[index] = value;
   }
 
   void Processor::add_to_register(std::uint8_t const index, std::uint8_t const value)
   {
+    logger_.debug("Instruction: Add value to register");
+    std::ostringstream msg;
+    msg << "V";
+    msg << std::hex << static_cast<int>(index);
+    msg << " += " << static_cast<int>(value);
+    logger_.debug(msg.str().c_str());
     v_[index] += value;
   }
 
   void Processor::set_index_register(std::uint16_t const value)
   {
+    logger_.debug("Instruction: Set index register");
+    std::ostringstream msg;
+    msg << "I = " << value;
+    logger_.debug(msg.str().c_str());
     i_ = Address{value, Address::Truncate{}};
   }
 
   void Processor::draw(std::uint8_t const x_register, std::uint8_t const y_register, std::uint8_t const sprite_size)
   {
+    logger_.debug("Instruction: Draw");
+
     auto const start_x = static_cast<std::uint8_t>(v_[x_register]%Screen::WIDTH);
     auto const start_y = static_cast<std::uint8_t>(v_[y_register]%Screen::HEIGHT);
     v_[0xF] = 0;

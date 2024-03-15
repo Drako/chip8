@@ -1,6 +1,7 @@
 add_library(vm STATIC
     address.hxx
     call_stack.hxx call_stack.cxx
+    logger.hxx
     memory.hxx memory.cxx
     processor.hxx processor.cxx
     screen.hxx
