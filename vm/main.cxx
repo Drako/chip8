@@ -70,22 +70,21 @@ public:
   {
     if (!needs_redraw_)
       return;
-    needs_redraw_ = true;
+    needs_redraw_ = false;
 
-    std::vector<SDL_Rect> points;
-    points.reserve(Screen::WIDTH*Screen::HEIGHT);
-
+    std::array<SDL_Rect, Screen::WIDTH*Screen::HEIGHT> points{};
+    int num_points = 0;
     for (auto y = Screen::HEIGHT; y--;) {
       for (auto x = Screen::WIDTH; x--;) {
         if (get_pixel(x, y))
-          points.emplace_back(x*10, y*10, 10, 10);
+          points[num_points++] = SDL_Rect{x*20, y*20, 20, 20};
       }
     }
 
     SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
     SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, SDL_ALPHA_OPAQUE);
-    SDL_RenderFillRects(renderer, points.data(), static_cast<int>(points.size()));
+    SDL_RenderFillRects(renderer, points.data(), num_points);
     SDL_RenderPresent(renderer);
   }
 
@@ -110,7 +109,7 @@ int main(int argc, char** argv)
   // SDL_LogSetPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG);
 
   SDL_Init(SDL_INIT_EVERYTHING);
-  SDL_Window* window = SDL_CreateWindow("CHIP-8", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 320, 0u);
+  SDL_Window* window = SDL_CreateWindow("CHIP-8", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 640, 0u);
   SDL_Renderer* renderer = SDL_CreateRenderer(window, 0, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
   SdlScreen screen;

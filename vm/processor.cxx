@@ -69,8 +69,8 @@ namespace chip8 {
       logger_.debug("Instruction: Return");
       if (auto const next_pc = call_stack_.pop(); next_pc.has_value()) {
         std::ostringstream msg;
-        msg << "Returning to 0x";
-        msg << std::setfill('0') << std::setw(3) << std::hex
+        msg << "Returning to 0x"
+            << std::setfill('0') << std::setw(3) << std::hex
             << static_cast<std::uint16_t>(*next_pc);
         logger_.debug(msg.str().c_str());
         pc_ = *next_pc;
@@ -87,8 +87,8 @@ namespace chip8 {
   {
     logger_.debug("Instruction: Jump");
     std::ostringstream msg;
-    msg << "Jumping to 0x";
-    msg << std::setfill('0') << std::setw(3) << std::hex << (param & Address::VALUE_MASK);
+    msg << "Jumping to 0x"
+        << std::setfill('0') << std::setw(3) << std::hex << (param & Address::VALUE_MASK);
     logger_.debug(msg.str().c_str());
     pc_ = Address{param, Address::Truncate{}};
   }
@@ -97,8 +97,8 @@ namespace chip8 {
   {
     logger_.debug("Instruction: Call");
     std::ostringstream msg;
-    msg << "Jumping to 0x";
-    msg << std::setfill('0') << std::setw(3) << std::hex << (param & Address::VALUE_MASK);
+    msg << "Jumping to 0x"
+        << std::setfill('0') << std::setw(3) << std::hex << (param & Address::VALUE_MASK);
     logger_.debug(msg.str().c_str());
     call_stack_.push(pc_);
     pc_ = Address{param, Address::Truncate{}};
@@ -108,9 +108,9 @@ namespace chip8 {
   {
     logger_.debug("Instruction: Set register");
     std::ostringstream msg;
-    msg << "V";
-    msg << std::hex << static_cast<int>(index);
-    msg << " = " << static_cast<int>(value);
+    msg << "V"
+        << std::hex << static_cast<int>(index)
+        << " = " << static_cast<int>(value);
     logger_.debug(msg.str().c_str());
     v_[index] = value;
   }
@@ -119,9 +119,9 @@ namespace chip8 {
   {
     logger_.debug("Instruction: Add value to register");
     std::ostringstream msg;
-    msg << "V";
-    msg << std::hex << static_cast<int>(index);
-    msg << " += " << static_cast<int>(value);
+    msg << "V"
+        << std::hex << static_cast<int>(index)
+        << " += " << static_cast<int>(value);
     logger_.debug(msg.str().c_str());
     v_[index] += value;
   }
