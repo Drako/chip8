@@ -40,6 +40,8 @@ namespace chip8 {
 
     std::uint8_t& operator[](Address address) noexcept;
 
+    void load_default_font(Address const base) noexcept;
+
     /**
      * Load data from the given source.
      *

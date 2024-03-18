@@ -7,6 +7,7 @@ namespace chip8 {
   Processor::Processor(CallStack& call_stack, Memory& memory, Screen& screen, Logger& logger) noexcept
       :call_stack_{call_stack}, memory_{memory}, screen_{screen}, logger_{logger}
   {
+    memory_.load_default_font(0x050_addr);
   }
 
   bool Processor::step()
@@ -22,7 +23,16 @@ namespace chip8 {
     auto const nnn = static_cast<std::uint16_t>((x << 8u) | nn);
 
     switch (first_nibble) {
-    default:
+    default: {
+      std::ostringstream msg;
+      msg << "Unsupported instruction 0x"
+          << std::setfill('0') << std::setw(4) << std::hex
+          << ((first_byte << 8) | nn)
+          << " at 0x"
+          << std::setfill('0') << std::setw(3) << std::hex
+          << static_cast<std::uint16_t>(pc_)-2;
+      logger_.error(msg.str().c_str());
+    }
       return false;
     case 0x0:
       return native_instruction(nnn);
@@ -44,6 +54,8 @@ namespace chip8 {
     case 0xD:
       draw(x, y, n);
       return true;
+    case 0xF:
+      return register_instruction(x, nn);
     }
   }
 
@@ -57,7 +69,7 @@ namespace chip8 {
           << (param & Address::VALUE_MASK)
           << " at 0x"
           << std::setfill('0') << std::setw(3) << std::hex
-          << static_cast<std::uint16_t>(pc_);
+          << static_cast<std::uint16_t>(pc_)-2;
       logger_.error(msg.str().c_str());
     }
       return false;
@@ -164,6 +176,43 @@ namespace chip8 {
       x = start_x;
       if (++y==Screen::HEIGHT)
         break;
+    }
+  }
+
+  bool Processor::register_instruction(std::uint8_t const index, std::uint16_t const instruction)
+  {
+    switch (instruction) {
+    default: {
+      std::ostringstream msg;
+      msg << "Unsupported register instruction 0x"
+          << std::setfill('0') << std::setw(2) << std::hex
+          << instruction
+          << " at 0x"
+          << std::setfill('0') << std::setw(3) << std::hex
+          << static_cast<std::uint16_t>(pc_)-2;
+      logger_.error(msg.str().c_str());
+    }
+      return false;
+    case 0x55:
+      store_to_memory(index);
+      return true;
+    case 0x65:
+      load_from_memory(index);
+      return true;
+    }
+  }
+
+  void Processor::store_to_memory(std::uint8_t const index)
+  {
+    for (std::uint8_t n = 0; n<=index; ++n) {
+      memory_[i_+n] = v_[n];
+    }
+  }
+
+  void Processor::load_from_memory(std::uint8_t const index)
+  {
+    for (std::uint8_t n = 0; n<=index; ++n) {
+      v_[n] = memory_[i_+n];
     }
   }
 }

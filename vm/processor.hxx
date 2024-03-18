@@ -34,12 +34,24 @@ namespace chip8 {
     std::array<std::uint8_t, 16u> v_{};
 
     bool native_instruction(std::uint16_t param);
+
     void jump(std::uint16_t param);
+
     void call(std::uint16_t param);
+
     void set_register(std::uint8_t index, std::uint8_t value);
+
     void add_to_register(std::uint8_t index, std::uint8_t value);
+
     void set_index_register(std::uint16_t value);
+
     void draw(std::uint8_t x_register, std::uint8_t y_register, std::uint8_t sprite_size);
+
+    bool register_instruction(std::uint8_t index, std::uint16_t instruction);
+
+    void store_to_memory(std::uint8_t index);
+
+    void load_from_memory(std::uint8_t index);
   };
 }
 
