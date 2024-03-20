@@ -18,7 +18,7 @@ namespace chip8 {
 
     auto const first_nibble = static_cast<std::uint8_t>(first_byte >> 4);
     auto const x = static_cast<std::uint8_t>(first_byte & 0xFu);
-    auto const y = static_cast<std::uint8_t>(nn>4);
+    auto const y = static_cast<std::uint8_t>(nn >> 4);
     auto const n = static_cast<std::uint8_t>(nn & 0xFu);
 
     auto const nnn = static_cast<std::uint16_t>((x << 8u) | nn);
@@ -58,6 +58,8 @@ namespace chip8 {
     case 0x7:
       add_to_register(x, nn);
       return true;
+    case 0x8:
+      return binary_operator(x, y, n);
     case 0x9:
       skip_unless_equal(x, y);
       return true;
@@ -386,6 +388,98 @@ namespace chip8 {
     msg << "Loading character for " << std::hex << c;
     logger_.debug(msg.str().c_str());
 
-    i_ = FONT_START+c;
+    i_ = FONT_START+(c*5);
+  }
+
+  bool Processor::binary_operator(std::uint8_t const x, std::uint8_t const y, std::uint8_t const instruction)
+  {
+    switch (instruction) {
+    default: {
+      std::ostringstream msg;
+      msg << "Unsupported binary operator 0x"
+          << std::setfill('0') << std::setw(1) << std::hex
+          << instruction
+          << " at 0x"
+          << std::setfill('0') << std::setw(3) << std::hex
+          << static_cast<std::uint16_t>(pc_)-2;
+      logger_.error(msg.str().c_str());
+    }
+      return false;
+    case 0x0:
+      assign_y_to_x(x, y);
+      return true;
+    case 0x1:
+      binary_or(x, y);
+      return true;
+    case 0x2:
+      binary_and(x, y);
+      return true;
+    case 0x3:
+      binary_xor(x, y);
+      return true;
+    case 0x4:
+      add_y_to_x(x, y);
+      return true;
+    case 0x5:
+      subtract_y_from_x(x, y);
+      return true;
+    case 0x7:
+      subtract_x_from_y(x, y);
+      return true;
+    }
+  }
+
+  void Processor::assign_y_to_x(std::uint8_t const x, std::uint8_t const y)
+  {
+    logger_.debug("Instruction: Assign Vy to Vx");
+    v_[x] = v_[y];
+  }
+
+  void Processor::binary_or(std::uint8_t const x, std::uint8_t const y)
+  {
+    logger_.debug("Instruction: Binary Or");
+    v_[x] = v_[x] | v_[y];
+  }
+
+  void Processor::binary_and(std::uint8_t const x, std::uint8_t const y)
+  {
+    logger_.debug("Instruction: Binary And");
+    v_[x] = v_[x] & v_[y];
+  }
+
+  void Processor::binary_xor(std::uint8_t const x, std::uint8_t const y)
+  {
+    logger_.debug("Instruction: Binary Xor");
+    v_[x] = v_[x] ^ v_[y];
+  }
+
+  void Processor::add_y_to_x(std::uint8_t const x, std::uint8_t const y)
+  {
+    logger_.debug("Instruction: Add registers with overflow");
+    std::uint16_t const sum = v_[x]+v_[y];
+    v_[0xF] = (sum & 0x100) >> 8;
+    v_[x] = sum & 0xFF;
+  }
+
+  void Processor::subtract_y_from_x(std::uint8_t const x, std::uint8_t const y)
+  {
+    logger_.debug("Instruction: Subtract Vy from Vx");
+
+    std::uint32_t const a = v_[x];
+    std::uint32_t const b = v_[y];
+    auto const result = a-b;
+    v_[0xF] = a>b ? 1 : 0;
+    v_[x] = result;
+  }
+
+  void Processor::subtract_x_from_y(std::uint8_t const x, std::uint8_t const y)
+  {
+    logger_.debug("Instruction: Subtract Vx from Vy");
+
+    std::uint32_t const a = v_[x];
+    std::uint32_t const b = v_[y];
+    auto const result = b-a;
+    v_[0xF] = b>a ? 1 : 0;
+    v_[x] = result;
   }
 }

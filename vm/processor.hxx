@@ -91,7 +91,23 @@ namespace chip8 {
 
     void get_key(std::uint8_t index);
 
-    void font_character(std::uint8_t const index);
+    void font_character(std::uint8_t index);
+
+    bool binary_operator(std::uint8_t x, std::uint8_t y, std::uint8_t instruction);
+
+    void assign_y_to_x(std::uint8_t x, std::uint8_t y);
+
+    void binary_or(std::uint8_t x, std::uint8_t y);
+
+    void binary_and(std::uint8_t x, std::uint8_t y);
+
+    void binary_xor(std::uint8_t x, std::uint8_t y);
+
+    void add_y_to_x(std::uint8_t x, std::uint8_t y);
+
+    void subtract_y_from_x(std::uint8_t x, std::uint8_t y);
+
+    void subtract_x_from_y(std::uint8_t x, std::uint8_t y);
   };
 }
 
