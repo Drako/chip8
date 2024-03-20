@@ -4,8 +4,9 @@
 #include <sstream>
 
 namespace chip8 {
-  Processor::Processor(CallStack& call_stack, Memory& memory, Screen& screen, Logger& logger) noexcept
-      :call_stack_{call_stack}, memory_{memory}, screen_{screen}, logger_{logger}
+  Processor::Processor(Config const& config, CallStack& call_stack, Memory& memory, Screen& screen,
+      Logger& logger) noexcept
+      :config_{config}, call_stack_{call_stack}, memory_{memory}, screen_{screen}, logger_{logger}
   {
     memory_.load_default_font(FONT_START);
   }
@@ -219,6 +220,12 @@ namespace chip8 {
     case 0x18:
       logger_.warn("Ignoring sound timer");
       return true;
+    case 0x1E:
+      add_to_index_register(index);
+      return true;
+    case 0x29:
+      font_character(index);
+      return true;
     case 0x55:
       store_to_memory(index);
       return true;
@@ -234,6 +241,8 @@ namespace chip8 {
     for (std::uint8_t n = 0; n<=index; ++n) {
       memory_[i_+n] = v_[n];
     }
+    if (config_.register_rw_modifies_i)
+      i_ += index+1;
   }
 
   void Processor::load_from_memory(std::uint8_t const index)
@@ -242,6 +251,8 @@ namespace chip8 {
     for (std::uint8_t n = 0; n<=index; ++n) {
       v_[n] = memory_[i_+n];
     }
+    if (config_.register_rw_modifies_i)
+      i_ += index+1;
   }
 
   void Processor::update_timers()
@@ -358,5 +369,23 @@ namespace chip8 {
       }
     }
     v_[index] = key;
+  }
+
+  void Processor::add_to_index_register(std::uint8_t const index)
+  {
+    logger_.debug("Instruction: Add to index register");
+    i_ += v_[index];
+  }
+
+  void Processor::font_character(std::uint8_t const index)
+  {
+    logger_.debug("Instruction: Font character");
+    int const c = (v_[index] & 0xF);
+
+    std::ostringstream msg;
+    msg << "Loading character for " << std::hex << c;
+    logger_.debug(msg.str().c_str());
+
+    i_ = FONT_START+c;
   }
 }

@@ -12,12 +12,16 @@
 #include "screen.hxx"
 
 namespace chip8 {
+  struct Config final {
+    bool register_rw_modifies_i;
+  };
+
   class Processor final {
   public:
     static constexpr Address const CODE_START = 0x200_addr;
     static constexpr Address const FONT_START = 0x050_addr;
 
-    Processor(CallStack& call_stack, Memory& memory, Screen& screen, Logger& logger) noexcept;
+    Processor(Config const& config, CallStack& call_stack, Memory& memory, Screen& screen, Logger& logger) noexcept;
 
     Processor(Processor const&) = delete;
 
@@ -31,6 +35,7 @@ namespace chip8 {
 
   private:
     // dependencies
+    Config config_;
     CallStack& call_stack_;
     Memory& memory_;
     Screen& screen_;
@@ -55,6 +60,8 @@ namespace chip8 {
     void add_to_register(std::uint8_t index, std::uint8_t value);
 
     void set_index_register(std::uint16_t value);
+
+    void add_to_index_register(std::uint8_t index);
 
     void draw(std::uint8_t x_register, std::uint8_t y_register, std::uint8_t sprite_size);
 
@@ -83,6 +90,8 @@ namespace chip8 {
     void skip_unless_pressed(std::uint8_t index);
 
     void get_key(std::uint8_t index);
+
+    void font_character(std::uint8_t const index);
   };
 }
 

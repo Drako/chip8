@@ -117,7 +117,10 @@ int main(int argc, char** argv)
   chip8::CallStack call_stack;
   chip8::Memory memory;
   memory.load(chip8::Processor::CODE_START, content);
-  chip8::Processor processor{call_stack, memory, screen, logger};
+  chip8::Config config = {
+      .register_rw_modifies_i = true,
+  };
+  chip8::Processor processor{config, call_stack, memory, screen, logger};
 
   auto const timer_updater = SDL_AddTimer(1000u, [](std::uint32_t const interval, void* ctx) -> std::uint32_t {
     auto const processor = reinterpret_cast<chip8::Processor*>(ctx);
