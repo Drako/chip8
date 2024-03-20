@@ -116,8 +116,14 @@ int main(int argc, char** argv)
   SdlLogger logger;
   chip8::CallStack call_stack;
   chip8::Memory memory;
-  memory.load(chip8::Address{0x200}, content);
+  memory.load(chip8::Processor::CODE_START, content);
   chip8::Processor processor{call_stack, memory, screen, logger};
+
+  auto const timer_updater = SDL_AddTimer(1000u, [](std::uint32_t const interval, void* ctx) -> std::uint32_t {
+    auto const processor = reinterpret_cast<chip8::Processor*>(ctx);
+    processor->update_timers();
+    return interval;
+  }, &processor);
 
   std::atomic<bool> run = true;
 
@@ -145,12 +151,122 @@ int main(int argc, char** argv)
     while (SDL_PollEvent(&evt)) {
       if (evt.type==SDL_QUIT)
         run = false;
+      else if (evt.type==SDL_KEYDOWN) {
+        switch (evt.key.keysym.scancode) {
+        default:
+          break;
+        case SDL_SCANCODE_1:
+          processor.toggle_key(0x1, true);
+          break;
+        case SDL_SCANCODE_2:
+          processor.toggle_key(0x2, true);
+          break;
+        case SDL_SCANCODE_3:
+          processor.toggle_key(0x3, true);
+          break;
+        case SDL_SCANCODE_4:
+          processor.toggle_key(0xC, true);
+          break;
+        case SDL_SCANCODE_Q:
+          processor.toggle_key(0x4, true);
+          break;
+        case SDL_SCANCODE_W:
+          processor.toggle_key(0x5, true);
+          break;
+        case SDL_SCANCODE_E:
+          processor.toggle_key(0x6, true);
+          break;
+        case SDL_SCANCODE_R:
+          processor.toggle_key(0xD, true);
+          break;
+        case SDL_SCANCODE_A:
+          processor.toggle_key(0x7, true);
+          break;
+        case SDL_SCANCODE_S:
+          processor.toggle_key(0x8, true);
+          break;
+        case SDL_SCANCODE_D:
+          processor.toggle_key(0x9, true);
+          break;
+        case SDL_SCANCODE_F:
+          processor.toggle_key(0xE, true);
+          break;
+        case SDL_SCANCODE_Z:
+          processor.toggle_key(0xA, true);
+          break;
+        case SDL_SCANCODE_X:
+          processor.toggle_key(0x0, true);
+          break;
+        case SDL_SCANCODE_C:
+          processor.toggle_key(0xB, true);
+          break;
+        case SDL_SCANCODE_V:
+          processor.toggle_key(0xF, true);
+          break;
+        }
+      }
+      else if (evt.type==SDL_KEYUP) {
+        switch (evt.key.keysym.scancode) {
+        default:
+          break;
+        case SDL_SCANCODE_1:
+          processor.toggle_key(0x1, false);
+          break;
+        case SDL_SCANCODE_2:
+          processor.toggle_key(0x2, false);
+          break;
+        case SDL_SCANCODE_3:
+          processor.toggle_key(0x3, false);
+          break;
+        case SDL_SCANCODE_4:
+          processor.toggle_key(0xC, false);
+          break;
+        case SDL_SCANCODE_Q:
+          processor.toggle_key(0x4, false);
+          break;
+        case SDL_SCANCODE_W:
+          processor.toggle_key(0x5, false);
+          break;
+        case SDL_SCANCODE_E:
+          processor.toggle_key(0x6, false);
+          break;
+        case SDL_SCANCODE_R:
+          processor.toggle_key(0xD, false);
+          break;
+        case SDL_SCANCODE_A:
+          processor.toggle_key(0x7, false);
+          break;
+        case SDL_SCANCODE_S:
+          processor.toggle_key(0x8, false);
+          break;
+        case SDL_SCANCODE_D:
+          processor.toggle_key(0x9, false);
+          break;
+        case SDL_SCANCODE_F:
+          processor.toggle_key(0xE, false);
+          break;
+        case SDL_SCANCODE_Z:
+          processor.toggle_key(0xA, false);
+          break;
+        case SDL_SCANCODE_X:
+          processor.toggle_key(0x0, false);
+          break;
+        case SDL_SCANCODE_C:
+          processor.toggle_key(0xB, false);
+          break;
+        case SDL_SCANCODE_V:
+          processor.toggle_key(0xF, false);
+          break;
+        }
+      }
     }
 
     screen.draw_to(renderer);
   }
 
   vm_thread.join();
+
+  SDL_RemoveTimer(timer_updater);
 
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);

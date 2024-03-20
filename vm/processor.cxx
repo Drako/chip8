@@ -7,7 +7,7 @@ namespace chip8 {
   Processor::Processor(CallStack& call_stack, Memory& memory, Screen& screen, Logger& logger) noexcept
       :call_stack_{call_stack}, memory_{memory}, screen_{screen}, logger_{logger}
   {
-    memory_.load_default_font(0x050_addr);
+    memory_.load_default_font(FONT_START);
   }
 
   bool Processor::step()
@@ -42,11 +42,23 @@ namespace chip8 {
     case 0x2:
       call(nnn);
       return true;
+    case 0x3:
+      skip_if_equal_to(x, nn);
+      return true;
+    case 0x4:
+      skip_unless_equal_to(x, nn);
+      return true;
+    case 0x5:
+      skip_if_equal(x, y);
+      return true;
     case 0x6:
       set_register(x, nn);
       return true;
     case 0x7:
       add_to_register(x, nn);
+      return true;
+    case 0x9:
+      skip_unless_equal(x, y);
       return true;
     case 0xA:
       set_index_register(nnn);
@@ -54,6 +66,8 @@ namespace chip8 {
     case 0xD:
       draw(x, y, n);
       return true;
+    case 0xE:
+      return key_skips(x, nn);
     case 0xF:
       return register_instruction(x, nn);
     }
@@ -193,6 +207,18 @@ namespace chip8 {
       logger_.error(msg.str().c_str());
     }
       return false;
+    case 0x07:
+      get_delay_timer(index);
+      return true;
+    case 0x0A:
+      get_key(index);
+      return true;
+    case 0x15:
+      set_delay_timer(index);
+      return true;
+    case 0x18:
+      logger_.warn("Ignoring sound timer");
+      return true;
     case 0x55:
       store_to_memory(index);
       return true;
@@ -204,6 +230,7 @@ namespace chip8 {
 
   void Processor::store_to_memory(std::uint8_t const index)
   {
+    logger_.debug("Instruction: Store registers to memory");
     for (std::uint8_t n = 0; n<=index; ++n) {
       memory_[i_+n] = v_[n];
     }
@@ -211,8 +238,125 @@ namespace chip8 {
 
   void Processor::load_from_memory(std::uint8_t const index)
   {
+    logger_.debug("Instruction: Load registers from memory");
     for (std::uint8_t n = 0; n<=index; ++n) {
       v_[n] = memory_[i_+n];
     }
+  }
+
+  void Processor::update_timers()
+  {
+    if (delay_timer_>0u)
+      --delay_timer_;
+
+    // if (sound_timer_>0u)
+    //   --sound_timer_;
+  }
+
+  void Processor::get_delay_timer(std::uint8_t const index)
+  {
+    logger_.debug("Instruction: Get delay timer");
+    v_[index] = delay_timer_;
+  }
+
+  void Processor::set_delay_timer(std::uint8_t const index)
+  {
+    logger_.debug("Instruction: Set delay timer");
+    delay_timer_ = v_[index];
+  }
+
+  void Processor::skip_if_equal_to(std::uint8_t const index, std::uint8_t const value)
+  {
+    logger_.debug("Instruction: Skip if equal to constant");
+    if (v_[index]==value)
+      pc_ += 2;
+  }
+
+  void Processor::skip_unless_equal_to(std::uint8_t const index, std::uint8_t const value)
+  {
+    logger_.debug("Instruction: Skip unless equal to constant");
+    if (v_[index]!=value)
+      pc_ += 2;
+  }
+
+  void Processor::skip_if_equal(std::uint8_t const x, std::uint8_t const y)
+  {
+    logger_.debug("Instruction: Skip if registers are equal");
+    if (v_[x]==v_[y])
+      pc_ += 2;
+  }
+
+  void Processor::skip_unless_equal(std::uint8_t const x, std::uint8_t const y)
+  {
+    logger_.debug("Instruction: Skip unless registers are equal");
+    if (v_[x]!=v_[y])
+      pc_ += 2;
+  }
+
+  void Processor::toggle_key(std::uint8_t const index, bool const pressed)
+  {
+    if (index>0xF)
+      return;
+
+    if (pressed)
+      keys_ |= (1u << index);
+    else
+      keys_ &= ~(1u << index);
+  }
+
+  bool Processor::key_skips(std::uint8_t const index, std::uint8_t const instruction)
+  {
+    switch (instruction) {
+    default: {
+      std::ostringstream msg;
+      msg << "Unsupported key skip 0x"
+          << std::setfill('0') << std::setw(2) << std::hex
+          << instruction
+          << " at 0x"
+          << std::setfill('0') << std::setw(3) << std::hex
+          << static_cast<std::uint16_t>(pc_)-2;
+      logger_.error(msg.str().c_str());
+    }
+      return false;
+    case 0x9E:
+      skip_if_pressed(index);
+      return true;
+    case 0xA1:
+      skip_unless_pressed(index);
+      return true;
+    }
+  }
+
+  void Processor::skip_if_pressed(std::uint8_t const index)
+  {
+    logger_.debug("Instruction: Skip if key pressed");
+    if (keys_ & (1u << v_[index]))
+      pc_ += 2;
+  }
+
+  void Processor::skip_unless_pressed(std::uint8_t const index)
+  {
+    logger_.debug("Instruction: Skip unless key pressed");
+    if (!(keys_ & (1u << v_[index])))
+      pc_ += 2;
+  }
+
+  void Processor::get_key(std::uint8_t const index)
+  {
+    logger_.debug("Instruction: Get key");
+    std::uint16_t const keys = keys_;
+    if (keys==0u) {
+      pc_ += -2;
+      return;
+    }
+
+    std::uint8_t key = 0;
+    for (std::uint8_t i = 0; i<16; ++i) {
+      if (keys & (1u << i)) {
+        v_[index] = i;
+        break;
+      }
+    }
+    v_[index] = key;
   }
 }

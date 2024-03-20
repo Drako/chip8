@@ -73,6 +73,11 @@ namespace chip8 {
       return Address{static_cast<std::uint16_t>(value_+offset), Address::Truncate{}};
     }
 
+    constexpr Address& operator+=(int const offset) noexcept
+    {
+      return (*this) = (*this)+offset;
+    }
+
     /**
      * Overload of prefix increment operator.
      */
