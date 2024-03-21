@@ -89,7 +89,7 @@ public:
   }
 
 private:
-  std::array<std::array<bool, 64u>, 32u> pixels_{};
+  std::array<std::array<bool, WIDTH>, HEIGHT> pixels_{};
   bool needs_redraw_{true};
 };
 
@@ -119,6 +119,7 @@ int main(int argc, char** argv)
   memory.load(chip8::Processor::CODE_START, content);
   chip8::Config config = {
       .register_rw_modifies_i = true,
+      .shift_takes_value_from_vy = true,
   };
   chip8::Processor processor{config, call_stack, memory, screen, logger};
 

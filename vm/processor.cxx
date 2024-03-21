@@ -228,6 +228,9 @@ namespace chip8 {
     case 0x29:
       font_character(index);
       return true;
+    case 0x33:
+      binary_coded_decimal(index);
+      return true;
     case 0x55:
       store_to_memory(index);
       return true;
@@ -398,7 +401,7 @@ namespace chip8 {
       std::ostringstream msg;
       msg << "Unsupported binary operator 0x"
           << std::setfill('0') << std::setw(1) << std::hex
-          << instruction
+          << static_cast<int>(instruction)
           << " at 0x"
           << std::setfill('0') << std::setw(3) << std::hex
           << static_cast<std::uint16_t>(pc_)-2;
@@ -423,8 +426,14 @@ namespace chip8 {
     case 0x5:
       subtract_y_from_x(x, y);
       return true;
+    case 0x6:
+      shift_right(x, y);
+      return true;
     case 0x7:
       subtract_x_from_y(x, y);
+      return true;
+    case 0xE:
+      shift_left(x, y);
       return true;
     }
   }
@@ -481,5 +490,40 @@ namespace chip8 {
     auto const result = b-a;
     v_[0xF] = b>a ? 1 : 0;
     v_[x] = result;
+  }
+
+  void Processor::shift_right(std::uint8_t const x, std::uint8_t const y)
+  {
+    logger_.debug("Instruction: Shift right");
+    auto const source = config_.shift_takes_value_from_vy ? v_[y] : v_[x];
+    v_[0xF] = (source & 0x1);
+    v_[x] = source >> 1;
+  }
+
+  void Processor::shift_left(std::uint8_t const x, std::uint8_t const y)
+  {
+    logger_.debug("Instruction: Shift left");
+    auto const source = config_.shift_takes_value_from_vy ? v_[y] : v_[x];
+    v_[0xF] = (source & 0x8F) >> 7;
+    v_[x] = source << 1;
+  }
+
+  void Processor::binary_coded_decimal(std::uint8_t const index)
+  {
+    logger_.debug("Instruction: Binary coded decimal");
+
+    std::array<std::uint8_t, 3u> digits{};
+
+    auto source = v_[index];
+    int d = 0;
+    while (source) {
+      digits[d++] = source%10;
+      source /= 10;
+    }
+    if (d==0)
+      d = 1;
+
+    for (int n = 0; n<d; ++n)
+      memory_[i_+n] = digits[d-1-n];
   }
 }

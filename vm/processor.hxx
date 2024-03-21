@@ -14,6 +14,7 @@
 namespace chip8 {
   struct Config final {
     bool register_rw_modifies_i;
+    bool shift_takes_value_from_vy;
   };
 
   class Processor final {
@@ -108,6 +109,12 @@ namespace chip8 {
     void subtract_y_from_x(std::uint8_t x, std::uint8_t y);
 
     void subtract_x_from_y(std::uint8_t x, std::uint8_t y);
+
+    void shift_right(std::uint8_t x, std::uint8_t y);
+
+    void shift_left(std::uint8_t x, std::uint8_t y);
+
+    void binary_coded_decimal(std::uint8_t index);
   };
 }
 
