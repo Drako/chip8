@@ -51,7 +51,7 @@ namespace chip8 {
     Logger& logger_;
 
     std::mt19937 rng_{std::random_device{}()};
-    std::uniform_int_distribution<std::uint8_t> dist_{};
+    std::uniform_int_distribution<std::uint16_t> dist_{0, 0xFF};
 
     // registers
     Address pc_{0x200};

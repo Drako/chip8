@@ -6,6 +6,9 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(ProjectHelpers)
+
 option(WITH_TESTS "Enable building and running of tests" FALSE)
 
 find_package(SDL2 REQUIRED)
