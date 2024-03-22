@@ -96,17 +96,19 @@ private:
 int main(int argc, char** argv)
 {
   if (argc<2) {
-    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Missing argument", "Usage: ./chip_8 [rom]", nullptr);
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Missing argument", "Usage: ./chip_8 [rom] {delay-in-ms=1000}",
+        nullptr);
     return 0;
   }
+
+  auto const delay = argc>2 ? std::stoi(argv[2]) : 1000;
+  bool show_debug_log = false;
 
   std::ifstream rom{argv[1], std::ios::binary | std::ios::ate};
   auto const size = rom.tellg();
   rom.seekg(std::ios::beg);
   std::vector<std::uint8_t> content(size);
   rom.read(reinterpret_cast<char*>(content.data()), size);
-
-  // SDL_LogSetPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG);
 
   SDL_Init(SDL_INIT_EVERYTHING);
   SDL_Window* window = SDL_CreateWindow("CHIP-8", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 640, 0u);
@@ -120,10 +122,11 @@ int main(int argc, char** argv)
   chip8::Config config = {
       .register_rw_modifies_i = true,
       .shift_takes_value_from_vy = true,
+      .use_vx_for_offset_jump = false,
   };
   chip8::Processor processor{config, call_stack, memory, screen, logger};
 
-  auto const timer_updater = SDL_AddTimer(1000u, [](std::uint32_t const interval, void* ctx) -> std::uint32_t {
+  auto const timer_updater = SDL_AddTimer(delay, [](std::uint32_t const interval, void* ctx) -> std::uint32_t {
     auto const processor = reinterpret_cast<chip8::Processor*>(ctx);
     processor->update_timers();
     return interval;
@@ -260,6 +263,11 @@ int main(int argc, char** argv)
           break;
         case SDL_SCANCODE_V:
           processor.toggle_key(0xF, false);
+          break;
+        case SDL_SCANCODE_L:
+          show_debug_log = !show_debug_log;
+          SDL_LogSetPriority(SDL_LOG_CATEGORY_APPLICATION,
+              show_debug_log ? SDL_LOG_PRIORITY_DEBUG : SDL_LOG_PRIORITY_INFO);
           break;
         }
       }

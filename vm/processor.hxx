@@ -5,6 +5,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <random>
 
 #include "call_stack.hxx"
 #include "logger.hxx"
@@ -15,6 +16,13 @@ namespace chip8 {
   struct Config final {
     bool register_rw_modifies_i;
     bool shift_takes_value_from_vy;
+    bool use_vx_for_offset_jump;
+  };
+
+  enum class GetKeyState {
+    None,
+    WaitingForKey,
+    GotKey,
   };
 
   class Processor final {
@@ -42,13 +50,19 @@ namespace chip8 {
     Screen& screen_;
     Logger& logger_;
 
+    std::mt19937 rng_{std::random_device{}()};
+    std::uniform_int_distribution<std::uint8_t> dist_{};
+
     // registers
     Address pc_{0x200};
     Address i_{0x0};
     std::atomic<std::uint8_t> delay_timer_{0u};
     // std::atomic<std::uint8_t> sound_timer_{0u};
-    std::atomic<std::uint16_t> keys_{0u};
     std::array<std::uint8_t, 16u> v_{};
+
+    std::atomic<std::uint16_t> keys_{0u};
+    GetKeyState get_key_state_ = GetKeyState::None;
+    std::uint8_t last_key_{0};
 
     bool native_instruction(std::uint16_t param);
 
@@ -115,6 +129,10 @@ namespace chip8 {
     void shift_left(std::uint8_t x, std::uint8_t y);
 
     void binary_coded_decimal(std::uint8_t index);
+
+    void random_number(std::uint8_t x, std::uint8_t mask);
+
+    void jump_with_offset(std::uint8_t const x, std::uint16_t const nnn);
   };
 }
 

@@ -66,6 +66,12 @@ namespace chip8 {
     case 0xA:
       set_index_register(nnn);
       return true;
+    case 0xB:
+      jump_with_offset(x, nnn);
+      return true;
+    case 0xC:
+      random_number(x, nn);
+      return true;
     case 0xD:
       draw(x, y, n);
       return true;
@@ -316,8 +322,13 @@ namespace chip8 {
 
     if (pressed)
       keys_ |= (1u << index);
-    else
+    else {
       keys_ &= ~(1u << index);
+      if (get_key_state_==GetKeyState::WaitingForKey) {
+        last_key_ = index;
+        get_key_state_ = GetKeyState::GotKey;
+      }
+    }
   }
 
   bool Processor::key_skips(std::uint8_t const index, std::uint8_t const instruction)
@@ -360,26 +371,27 @@ namespace chip8 {
   void Processor::get_key(std::uint8_t const index)
   {
     logger_.debug("Instruction: Get key");
-    std::uint16_t const keys = keys_;
-    if (keys==0u) {
+
+    switch (get_key_state_) {
+    case GetKeyState::None:
+      get_key_state_ = GetKeyState::WaitingForKey;
+      [[fallthrough]];
+    case GetKeyState::WaitingForKey:
       pc_ += -2;
       return;
+    case GetKeyState::GotKey:
+      v_[index] = last_key_;
+      last_key_ = 0;
+      get_key_state_ = GetKeyState::None;
     }
-
-    std::uint8_t key = 0;
-    for (std::uint8_t i = 0; i<16; ++i) {
-      if (keys & (1u << i)) {
-        v_[index] = i;
-        break;
-      }
-    }
-    v_[index] = key;
   }
 
   void Processor::add_to_index_register(std::uint8_t const index)
   {
     logger_.debug("Instruction: Add to index register");
-    i_ += v_[index];
+    std::uint16_t const sum = static_cast<std::uint16_t>(i_)+v_[index];
+    v_[0xF] = sum>0xFFF ? 1 : 0;
+    i_ = Address{sum, Address::Truncate{}};
   }
 
   void Processor::font_character(std::uint8_t const index)
@@ -525,5 +537,25 @@ namespace chip8 {
 
     for (int n = 0; n<d; ++n)
       memory_[i_+n] = digits[d-1-n];
+  }
+
+  void Processor::random_number(std::uint8_t const x, std::uint8_t const mask)
+  {
+    logger_.debug("Instruction: Random number");
+    v_[x] = dist_(rng_) & mask;
+  }
+
+  void Processor::jump_with_offset(std::uint8_t const x, std::uint16_t const nnn)
+  {
+    logger_.debug("Instruction: Jump with offset");
+
+    auto const base = Address{nnn, Address::Truncate{}};
+    auto const target = base+(config_.use_vx_for_offset_jump ? v_[x] : v_[0]);
+
+    std::ostringstream msg;
+    msg << "Jumping to 0x"
+        << std::setfill('0') << std::setw(3) << std::hex << static_cast<std::uint16_t>(target);
+    logger_.debug(msg.str().c_str());
+    pc_ = target;
   }
 }
