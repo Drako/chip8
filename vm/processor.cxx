@@ -489,7 +489,7 @@ namespace chip8 {
     std::uint32_t const a = v_[x];
     std::uint32_t const b = v_[y];
     auto const result = a-b;
-    v_[0xF] = a>b ? 1 : 0;
+    v_[0xF] = a>=b ? 1 : 0;
     v_[x] = result;
   }
 
@@ -500,7 +500,7 @@ namespace chip8 {
     std::uint32_t const a = v_[x];
     std::uint32_t const b = v_[y];
     auto const result = b-a;
-    v_[0xF] = b>a ? 1 : 0;
+    v_[0xF] = b>=a ? 1 : 0;
     v_[x] = result;
   }
 

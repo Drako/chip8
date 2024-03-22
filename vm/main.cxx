@@ -136,7 +136,7 @@ int main(int argc, char** argv)
 
   std::thread vm_thread{[&run, &processor] {
     using namespace std::chrono_literals;
-    auto const intended = 1'428'000ns; // ~700Hz
+    auto const intended = 1'428ns; // '000ns; // ~700Hz
 
     auto start = std::chrono::high_resolution_clock::now();
     while (run) {
